@@ -1,0 +1,65 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'lemp-stack-optimized'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'prometheus'
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          instance: 'nginx-reverse-proxy'
+
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysqld-exporter:9104']
+        labels:
+          instance: 'mariadb'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          instance: 'redis-cache'
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'docker-host'
+
+  # PHP-FPM мониторинг
+  - job_name: 'php-fpm-1'
+    static_configs:
+      - targets: ['php-fpm-exporter-1:9253']
+        labels:
+          instance: 'php-fpm-1'
+          backend: 'app-php-1'
+
+  - job_name: 'php-fpm-2'
+    static_configs:
+      - targets: ['php-fpm-exporter-2:9253']
+        labels:
+          instance: 'php-fpm-2'
+          backend: 'app-php-2'
+
+  # Loki мониторинг
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+        labels:
+          instance: 'loki-logs'
+
+  # Promtail мониторинг
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']
+        labels:
+          instance: 'promtail-collector'

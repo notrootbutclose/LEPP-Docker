@@ -1,0 +1,13 @@
+# Secrets and local overrides
+.env
+
+# Backups and logs
+backups/
+*.log
+debug.log
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+*.swp
