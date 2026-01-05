@@ -1,8 +1,8 @@
 #LEMP Stack in Docker with Full Observability
 
-[![License](https://img.shields.io/github/license/misha-kopylov/lemp-docker?color=blue&logo=github&style=flat-square)](LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/misha-kopylov/lemp-docker?color=green&logo=git&style=flat-square)](https://github.com/misha-kopylov/lemp-docker/commits/main)
-[![Docker Image Size](https://img.shields.io/docker/image-size/misha-kopylov/lemp-docker/latest?color=orange&logo=docker&style=flat-square)](https://hub.docker.com/r/misha-kopylov/lemp-docker)
+[![License](https://img.shields.io/github/license/notrootbutclose/lemp-docker?color=blue&logo=github&style=flat-square)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/notrootbutclose/lemp-docker?color=green&logo=git&style=flat-square)](https://github.com/notrootbutclose/lemp-docker/commits/main)
+[![Docker Image Size](https://img.shields.io/docker/image-size/sudomisha/lemp-docker/latest?color=orange&logo=docker&style=flat-square)](https://hub.docker.com/r/sudomisha/lemp-docker)
 
 [![Docker](https://img.shields.io/badge/Docker-20.10%2B-2496ED?logo=docker&logoColor=white&style=flat-square)](https://docs.docker.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white&style=flat-square)](https://www.php.net/)
@@ -10,7 +10,6 @@
 [![MariaDB](https://img.shields.io/badge/MariaDB-11-003545?logo=mariadb&logoColor=white&style=flat-square)](https://mariadb.org/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-Latest-E6522C?logo=prometheus&logoColor=white&style=flat-square)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Latest-F46800?logo=grafana&logoColor=white&style=flat-square)](https://grafana.com/)
-
 
 ##Project Features
 
