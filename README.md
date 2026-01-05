@@ -23,14 +23,14 @@
    - Security: Isolated network, minimal privileges, closed ports 
    - Production-ready: Health checks, auto-restart, optimized configurations
 
-###Requirements
+##Requirements
 
     Docker 20.10+  
     Docker Compose v2  
     Minimum 2 GB RAM  
     Free ports: 80, 3000, 9090
 
-###Architecture
+##Architecture
 
 Internet → Nginx (reverse proxy) → PHP-FPM (x2) → MariaDB
                 ↓                        ↓           ↓
@@ -101,63 +101,63 @@ Internet → Nginx (reverse proxy) → PHP-FPM (x2) → MariaDB
 
 ##Quick start(Ubuntu/Debian)
 
-###Update the system
+##Update the system
 sudo apt update && sudo apt upgrade -y
 
-###Install dependencies
+##Install dependencies
 sudo apt install -y ca-certificates curl gnupg lsb-release
 
-###Add Docker's GPG key
+##Add Docker's GPG key
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
   sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-###Add the Docker repository
+##Add the Docker repository
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
   https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-###Install Docker
+##Install Docker
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-###Add your user to the docker group
+##Add your user to the docker group
 sudo usermod -aG docker $USER
 newgrp docker
 
-###Verify installation
+##Verify installation
 docker version && docker compose version
 
 
 ##Project Deployment
 
-### 1. Clone the repository
+## 1. Clone the repository
 git clone https://github.com/your-username/lemp-docker.git
 cd lemp-docker
 
-### 2. Configure environment variables
+## 2. Configure environment variables
 cp .env.example .env
 nano .env  # SET STRONG PASSWORDS!
 
-### 3. Start all services
+## 3. Start all services
 docker compose up -d --build
 
-### 4. Check service status
+## 4. Check service status
 docker compose ps
 
 
 ##Verification
 
-### Main web interface
+## Main web interface
 curl http://localhost
 
-### Nginx status
+## Nginx status
 curl http://localhost/nginx_status
 
-### Prometheus metrics
+## Prometheus metrics
 curl http://localhost:9090/api/v1/targets
 
-### Connect to the database
+## Connect to the database
 docker exec -it lemp-db mysql -u root -p${MYSQL_ROOT_PASSWORD}
 
 
@@ -204,37 +204,37 @@ lemp-docker/
 
 ##Management
 
-### Start all services  
+## Start all services  
 docker compose up -d 
 
-### Stop services  
+## Stop services  
 docker compose down
 
-### View logs  
+## View logs  
 docker compose logs -f
 
-### View logs for a specific service  
+## View logs for a specific service  
 docker compose logs -f reverse-proxy
 
-### Restart a service  
+## Restart a service  
 docker compose restart app-php-1 
 
-### Enter a container  
+## Enter a container  
 docker exec -it lemp-app-php-1 sh
 
-### Monitor resource usage  
+## Monitor resource usage  
 docker stats
 
-### Full cleanup (including volumes)  
+## Full cleanup (including volumes)  
 docker compose down -v
 
 
 ##Scaling PHP-FPM
 
-### Scale to 4 instances  
+## Scale to 4 instances  
 docker compose up -d --scale app-php-1=2 --scale app-php-2=2 
 
-### Or scale to 6 instances  
+## Or scale to 6 instances  
 docker compose up -d --scale app-php-1=3 --scale app-php-2=3 
 
 
