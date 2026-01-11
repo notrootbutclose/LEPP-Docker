@@ -1,292 +1,316 @@
 <?php
-// Кэширование результата БД с Redis
-$cache_key = 'db_status';
-$cached_result = null;
+// Засекаем время начала
+$start_time = microtime(true);
 
-// Подключение к Redis
+// --- Подключение к Redis ---
+$redis = null;
+$redis_status = 'disconnected';
+
 try {
     $redis = new Redis();
     $redis->connect('redis', 6379);
-    $cached_result = $redis->get($cache_key);
-    if ($cached_result) {
-        $cached_result = json_decode($cached_result, true);
+    if ($redis->ping() === '+PONG') {
+        $redis_status = 'connected';
     }
 } catch (Exception $e) {
-    $redis = null;
+    $redis_status = 'error';
 }
 
-if (!$cached_result) {
-    // Настройки подключения к БД
-    $host = 'db';
-    $dbname = getenv('MYSQL_DATABASE') ?: 'lempdb';
-    $username = getenv('MYSQL_USER') ?: 'user';
-    $password = getenv('MYSQL_PASSWORD') ?: '123456';
+// --- Подключение к PostgreSQL ---
+$db_status = 'disconnected';
+$db_version = 'N/A';
+$db_error = null;
 
-    try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_PERSISTENT => true
-        ]);
+$host = 'db';
+$dbname = getenv('POSTGRES_DB') ?: 'lempdb';
+$username = getenv('POSTGRES_USER') ?: 'lempuser';
+$password = getenv('POSTGRES_PASSWORD') ?: 'LempSecurePass2024!';
 
-        // Создание тестовой таблицы
-        $pdo->exec("CREATE TABLE IF NOT EXISTS test_table (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            message VARCHAR(255),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )");
-
-        // Добавление тестовой записи
-        $stmt = $pdo->prepare("INSERT INTO test_table (message) VALUES (:message)");
-        $stmt->execute(['message' => 'Test from ' . gethostname()]);
-
-        // Получение версии и статистики
-        $version = $pdo->query("SELECT VERSION() as version")->fetch()['version'];
-        $count = $pdo->query("SELECT COUNT(*) as count FROM test_table")->fetch()['count'];
-
-        $db_result = [
-            'status' => 'connected',
-            'version' => $version,
-            'records' => $count
-        ];
-
-        // Кэшируем на 30 секунд
-        if ($redis) {
-            $redis->setex($cache_key, 30, json_encode($db_result));
-        }
-    } catch(PDOException $e) {
-        $db_result = [
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ];
-    }
-} else {
-    $db_result = $cached_result;
-    $db_result['cached'] = true;
+try {
+    $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_PERSISTENT => true
+    ]);
+    $db_version = $pdo->query("SELECT VERSION()")->fetchColumn();
+    $db_status = 'connected';
+} catch (PDOException $e) {
+    $db_status = 'error';
+    $db_error = $e->getMessage();
 }
 
-// Статистика Redis
-$redis_status = 'disconnected';
-if ($redis) {
-    try {
-        $redis_status = $redis->ping() ? 'connected' : 'disconnected';
-        $redis_memory = $redis->info('memory')['used_memory_human'] ?? 'unknown';
-    } catch (Exception $e) {
-        $redis_status = 'error';
-        $redis_memory = 'unknown';
+// --- Информация о контейнере ---
+$container_id = gethostname();
+$php_version = phpversion();
+$memory_limit = ini_get('memory_limit');
+
+// --- Nginx статус ---
+$nginx_status = 'running'; // если PHP отвечает, значит Nginx работает
+
+// --- OPcache ---
+$opcache_status = 'disabled';
+if (function_exists('opcache_get_status')) {
+    $opcache_data = opcache_get_status();
+    if (is_array($opcache_data) && !empty($opcache_data['opcache_enabled'])) {
+        $opcache_status = 'enabled';
     }
 }
+
+// --- Health Check ---
+$health_status = 'operational';
+$health_class = 'status-ok';
+
+if ($db_status === 'error' || $redis_status === 'error') {
+    $health_status = 'degraded';
+    $health_class = 'status-warn';
+}
+if ($db_status === 'disconnected' && $redis_status === 'disconnected') {
+    $health_status = 'critical';
+    $health_class = 'status-err';
+}
+
+// --- Время загрузки ---
+$page_load_time = round((microtime(true) - $start_time) * 1000, 2);
 ?>
 
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LEMP Stack Status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="5">
+    <title>LEPP Stack Monitor</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
-            background: #0d1117;
-            color: #e6edf3;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', Consolas, monospace;
             line-height: 1.6;
             padding: 2rem;
+            font-size: 14px;
             min-height: 100vh;
         }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
+        .container { max-width: 1200px; margin: 0 auto; }
+        
         h1 {
-            color: #58a6ff;
+            font-size: 2rem;
             margin-bottom: 2rem;
-            font-size: 1.8rem;
-            font-weight: 600;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #0f0;
+            padding-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-shadow: 0 0 10px #0f0;
         }
-
-        .status-grid {
+        
+        .health-indicator {
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
-
-        .status-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 1.5rem;
+        
+        .card {
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 1.25rem;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
         }
-
-        .status-card h2 {
-            color: #7d8590;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        
+        .card h2 {
+            font-size: 1.1rem;
             margin-bottom: 1rem;
+            color: #0f0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #0f0;
         }
-
-        .status-indicator {
+        
+        .metric { 
+            margin: 0.5rem 0; 
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
         }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        
+        .label { 
+            flex: 0 0 140px;
+            color: #0c0; 
+            font-weight: bold;
         }
-
-        .status-connected { background: #3fb950; }
-        .status-error { background: #f85149; }
-        .status-cached { background: #d29922; }
-
-        .metric {
-            color: #7d8590;
-            font-size: 0.85rem;
-            margin: 0.3rem 0;
+        
+        .value { 
+            color: #0f0; 
+            font-weight: bold;
+            text-shadow: 0 0 5px #0f0;
         }
-
-        .metric-value {
-            color: #e6edf3;
-            font-weight: 500;
+        
+        .status { 
+            display: inline-block; 
+            width: 14px; 
+            height: 14px; 
+            border-radius: 50%; 
+            margin-right: 8px;
+            animation: pulse 2s infinite;
         }
-
-        .info-section {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-
-        .info-section h2 {
-            color: #58a6ff;
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
+        
+        .status-ok { 
+            background: #0f0; 
+            box-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
         }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+        
+        .status-warn { 
+            background: #ff0; 
+            box-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
         }
-
-        .links {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-top: 1.5rem;
+        
+        .status-err { 
+            background: #f00; 
+            box-shadow: 0 0 10px #f00, 0 0 20px #f00;
         }
-
-        .link {
-            color: #58a6ff;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
+        
+        .error-msg { 
+            color: #f66; 
+            font-size: 0.85rem; 
+            margin-top: 0.5rem;
+            word-break: break-word;
         }
-
-        .link:hover {
-            background: #21262d;
-            border-color: #58a6ff;
-        }
-
+        
         .footer {
-            text-align: center;
-            color: #7d8590;
-            font-size: 0.8rem;
             margin-top: 3rem;
+            color: #0c0;
+            font-size: 0.9rem;
+            text-align: center;
+            border-top: 1px solid #0f0;
             padding-top: 1rem;
-            border-top: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .auto-refresh {
+            font-size: 0.75rem;
+            color: #080;
+        }
+        
+        /* Эффект сканирующей линии */
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        
+        .scan-line {
+            position: fixed;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(transparent, #0f0, transparent);
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+            opacity: 0.3;
         }
     </style>
 </head>
 <body>
+    <div class="scan-line"></div>
+    
     <div class="container">
-        <h1>LEMP Stack - Performance Monitor</h1>
+        <h1>
+            <span>LEPP STACK MONITOR</span>
+            <span class="health-indicator">
+                <span class="status <?= $health_class ?>"></span>
+                <span><?= strtoupper($health_status) ?></span>
+            </span>
+        </h1>
 
-        <div class="status-grid">
-            <!-- Database Status -->
-            <div class="status-card">
-                <h2>Database</h2>
-                <div class="status-indicator">
-                    <span class="status-dot <?= $db_result['status'] === 'connected' ? 'status-connected' : 'status-error' ?>"></span>
-                    <span><?= ucfirst($db_result['status']) ?></span>
-                    <?php if (isset($db_result['cached'])): ?>
-                    <span class="status-dot status-cached"></span>
-                    <span style="color: #d29922;">Cached</span>
-                    <?php endif; ?>
+        <div class="grid">
+            <!-- Nginx -->
+            <div class="card">
+                <h2>[ NGINX ]</h2>
+                <div class="metric">
+                    <span class="status status-ok"></span>
+                    <span class="label">STATUS:</span>
+                    <span class="value"><?= strtoupper($nginx_status) ?></span>
                 </div>
-                <?php if ($db_result['status'] === 'connected'): ?>
-                <div class="metric">Version: <span class="metric-value"><?= $db_result['version'] ?></span></div>
-                <div class="metric">Records: <span class="metric-value"><?= $db_result['records'] ?></span></div>
+            </div>
+
+            <!-- PostgreSQL -->
+            <div class="card">
+                <h2>[ POSTGRESQL ]</h2>
+                <div class="metric">
+                    <span class="status <?= $db_status === 'connected' ? 'status-ok' : 'status-err' ?>"></span>
+                    <span class="label">STATUS:</span>
+                    <span class="value"><?= strtoupper($db_status) ?></span>
+                </div>
+                <?php if ($db_status === 'connected'): ?>
+                    <div class="metric">
+                        <span class="label">VERSION:</span>
+                        <span class="value"><?= htmlspecialchars(explode(' ', $db_version)[1] ?? 'N/A') ?></span>
+                    </div>
                 <?php else: ?>
-                <div class="metric" style="color: #f85149;">Error: <?= $db_result['message'] ?></div>
+                    <div class="error-msg">ERROR: <?= htmlspecialchars(substr($db_error ?? 'Connection failed', 0, 50)) ?></div>
                 <?php endif; ?>
             </div>
 
-            <!-- Redis Status -->
-            <div class="status-card">
-                <h2>Cache</h2>
-                <div class="status-indicator">
-                    <span class="status-dot <?= $redis_status === 'connected' ? 'status-connected' : 'status-error' ?>"></span>
-                    <span><?= ucfirst($redis_status) ?></span>
-                </div>
-                <div class="metric">Memory: <span class="metric-value"><?= $redis_memory ?? 'unknown' ?></span></div>
-            </div>
-
-            <!-- PHP Status -->
-            <div class="status-card">
-                <h2>PHP Runtime</h2>
-                <div class="status-indicator">
-                    <span class="status-dot status-connected"></span>
-                    <span>Active</span>
-                </div>
-                <div class="metric">Version: <span class="metric-value"><?= phpversion() ?></span></div>
-                <div class="metric">Memory: <span class="metric-value"><?= ini_get('memory_limit') ?></span></div>
-                <div class="metric">Container: <span class="metric-value"><?= gethostname() ?></span></div>
-                <div class="metric">Load balanced: <span class="metric-value">Yes</span></div>
-            </div>
-        </div>
-
-        <div class="info-section">
-            <h2>System Information</h2>
-            <div class="info-grid">
-                <div>
-                    <div class="metric">Server: <span class="metric-value"><?= $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown' ?></span></div>
-                    <div class="metric">Host: <span class="metric-value"><?= $_SERVER['HTTP_HOST'] ?? 'localhost' ?></span></div>
-                </div>
-                <div>
-                    <div class="metric">OPcache: <span class="metric-value"><?= function_exists('opcache_get_status') && opcache_get_status() ? 'Enabled' : 'Disabled' ?></span></div>
-                    <div class="metric">Extensions: <span class="metric-value"><?= count(get_loaded_extensions()) ?> loaded</span></div>
+            <!-- Redis -->
+            <div class="card">
+                <h2>[ REDIS CACHE ]</h2>
+                <div class="metric">
+                    <span class="status <?= $redis_status === 'connected' ? 'status-ok' : 'status-err' ?>"></span>
+                    <span class="label">STATUS:</span>
+                    <span class="value"><?= strtoupper($redis_status) ?></span>
                 </div>
             </div>
-        </div>
 
-        <div class="links">
-            <a href="/info.php" class="link">PHP Info</a>
-            <a href="http://<?= $_SERVER['HTTP_HOST'] ?>:3000" class="link" target="_blank">Grafana</a>
-            <a href="http://<?= $_SERVER['HTTP_HOST'] ?>:9090" class="link" target="_blank">Prometheus</a>
-            <a href="/nginx_status" class="link">Nginx Status</a>
+            <!-- PHP Runtime -->
+            <div class="card">
+                <h2>[ PHP RUNTIME ]</h2>
+                <div class="metric">
+                    <span class="status status-ok"></span>
+                    <span class="label">STATUS:</span>
+                    <span class="value">ACTIVE</span>
+                </div>
+                <div class="metric">
+                    <span class="label">VERSION:</span>
+                    <span class="value"><?= htmlspecialchars($php_version) ?></span>
+                </div>
+                <div class="metric">
+                    <span class="label">MEMORY LIMIT:</span>
+                    <span class="value"><?= htmlspecialchars($memory_limit) ?></span>
+                </div>
+                <div class="metric">
+                    <span class="label">CONTAINER:</span>
+                    <span class="value"><?= htmlspecialchars(substr($container_id, 0, 12)) ?></span>
+                </div>
+                <div class="metric">
+                    <span class="label">OPCACHE:</span>
+                    <span class="value"><?= strtoupper($opcache_status) ?></span>
+                </div>
+                <div class="metric">
+                    <span class="label">LOAD BALANCED:</span>
+                    <span class="value">YES</span>
+                </div>
+            </div>
         </div>
 
         <div class="footer">
-            LEMP Stack Docker Container
+            <span>LEPP Stack | Nginx + PHP-FPM + PostgreSQL + Redis | <?= date('Y-m-d H:i:s') ?></span>
+            <span class="auto-refresh">[ AUTO-REFRESH: 5s | PAGE LOAD: <?= $page_load_time ?> ms ]</span>
         </div>
     </div>
 </body>
 </html>
-

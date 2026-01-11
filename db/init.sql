@@ -1,31 +1,25 @@
--- Создание дополнительной базы данных для тестов
-CREATE DATABASE IF NOT EXISTS test_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Создание пользователя для мониторинга
+CREATE USER exporter WITH PASSWORD 'exporterpass123';
 
--- Создание пользователя для мониторинга (для экспортера)
-CREATE USER IF NOT EXISTS 'exporter'@'%' IDENTIFIED BY 'exporterpass123';
+-- Предоставление прав для мониторинга
+GRANT CONNECT ON DATABASE leppdb TO exporter;
+GRANT pg_monitor TO exporter;
 
--- Предоставление необходимых привилегий для мониторинга
-GRANT PROCESS, REPLICATION CLIENT ON *.* TO 'exporter'@'%';
-GRANT SELECT ON performance_schema.* TO 'exporter'@'%';
-GRANT SELECT ON mysql.* TO 'exporter'@'%';
-
--- Применение изменений
-FLUSH PRIVILEGES;
-
--- Пример создания таблицы
-USE lempdb;
-
+-- Создание тестовой таблицы
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Вставка тестовых данных
 INSERT INTO users (username, email) VALUES
-('admin', 'admin@example.com'),
-('user1', 'user1@example.com'),
-('user2', 'user2@example.com')
-ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+    ('admin', 'admin@example.com'),
+    ('user1', 'user1@example.com'),
+    ('user2', 'user2@example.com')
+ON CONFLICT (username) DO NOTHING;
+
+-- Создание индекса
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
