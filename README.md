@@ -26,8 +26,9 @@ Requirements
 
     Docker 20.10+  
     Docker Compose v2  
-    Minimum 2 GB RAM  
-    Free ports: 80, 3000, 9090
+    4 GB minimum (2 GB may work for demo, but not recommended)  
+    CPU 2+ cores
+    Disk: 10 GB free space (SSD preferred)  
 
 ```text
 lepp-docker/
