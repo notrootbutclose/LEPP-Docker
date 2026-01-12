@@ -1,11 +1,4 @@
 LEMP Stack in Docker with Full Observability
-<<<<<<< HEAD
-
-[![License](https://img.shields.io/github/license/notrootbutclose/lemp-docker?color=blue&logo=github&style=flat-square)](LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/notrootbutclose/lemp-docker?color=green&logo=git&style=flat-square)](https://github.com/notrootbutclose/lemp-docker/commits/main)
-[![Docker Image Size](https://img.shields.io/docker/image-size/sudomisha/lemp-docker/latest?color=orange&logo=docker&style=flat-square)](https://hub.docker.com/r/sudomisha/lemp-docker)
-=======
->>>>>>> 2c123c1 (initial commit: lepp-docker)
 
 [![Docker](https://img.shields.io/badge/Docker-20.10%2B-2496ED?logo=docker&logoColor=white&style=flat-square)](https://docs.docker.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white&style=flat-square)](https://www.php.net/)
@@ -123,18 +116,18 @@ docker version && docker compose version
 
 Project Deployment
 
-# Clone the repository
+Clone the repository
 git clone https://github.com/notrootbutclose/lepp-docker.git
 cd lepp-docker
 
-# Configure environment variables
+Configure environment variables
 cp .env.example .env
 nano .env  # SET STRONG PASSWORDS!
 
-# Start all services
+Start all services
 docker compose up -d --build
 
-# Check service status
+Check service status
 docker compose ps
 
 
@@ -145,8 +138,8 @@ lepp-docker/
 ├── README.md                   # Project overview and instructions
 ├── LICENSE
 ├── docker-compose.yml          # Main configuration (includes postgres-exporter)
-├── .env.example                # Environment template (рекомендуется добавить)
-├── .gitignore                  # Git ignore rules (рекомендуется добавить)
+├── .env.example                # Environment template 
+├── .gitignore                  # Git ignore rules
 │
 ├── reverse-proxy/              # Nginx reverse proxy
 │   └── nginx.conf
