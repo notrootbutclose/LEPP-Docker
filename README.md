@@ -1,8 +1,11 @@
 LEMP Stack in Docker with Full Observability
+<<<<<<< HEAD
 
 [![License](https://img.shields.io/github/license/notrootbutclose/lemp-docker?color=blue&logo=github&style=flat-square)](LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/notrootbutclose/lemp-docker?color=green&logo=git&style=flat-square)](https://github.com/notrootbutclose/lemp-docker/commits/main)
 [![Docker Image Size](https://img.shields.io/docker/image-size/sudomisha/lemp-docker/latest?color=orange&logo=docker&style=flat-square)](https://hub.docker.com/r/sudomisha/lemp-docker)
+=======
+>>>>>>> 2c123c1 (initial commit: lepp-docker)
 
 [![Docker](https://img.shields.io/badge/Docker-20.10%2B-2496ED?logo=docker&logoColor=white&style=flat-square)](https://docs.docker.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white&style=flat-square)](https://www.php.net/)

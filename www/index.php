@@ -5,26 +5,57 @@ $start_time = microtime(true);
 // --- Подключение к Redis ---
 $redis = null;
 $redis_status = 'disconnected';
+$redis_error = null;
 
 try {
-    $redis = new Redis();
-    $redis->connect('redis', 6379);
-    if ($redis->ping() === '+PONG') {
-        $redis_status = 'connected';
+    if (!class_exists('Redis')) {
+        throw new Exception('Redis extension not loaded');
     }
+    
+    $redis = new Redis();
+    
+    // Подключение с таймаутом
+    if (!$redis->connect('redis', 6379, 2.0)) {
+        throw new Exception('Cannot connect to Redis server');
+    }
+    
+    // Аутентификация (если нужна)
+    $redis_password = getenv('REDIS_PASSWORD');
+    if ($redis_password && $redis_password !== '') {
+        if (!$redis->auth($redis_password)) {
+            throw new Exception('Redis authentication failed');
+        }
+    }
+    
+    // Проверка соединения
+    $ping_result = $redis->ping();
+    
+    // phpredis может возвращать true, 'PONG' или '+PONG'
+    if ($ping_result === true || 
+        $ping_result === 'PONG' || 
+        $ping_result === '+PONG' ||
+        (is_string($ping_result) && strpos($ping_result, 'PONG') !== false)) {
+        $redis_status = 'connected';
+    } else {
+        throw new Exception('Unexpected ping response: ' . var_export($ping_result, true));
+    }
+    
+} catch (RedisException $e) {
+    $redis_status = 'error';
+    $redis_error = 'RedisException: ' . $e->getMessage();
 } catch (Exception $e) {
     $redis_status = 'error';
+    $redis_error = $e->getMessage();
 }
 
 // --- Подключение к PostgreSQL ---
 $db_status = 'disconnected';
 $db_version = 'N/A';
 $db_error = null;
-
 $host = 'db';
-$dbname = getenv('POSTGRES_DB') ?: 'lempdb';
-$username = getenv('POSTGRES_USER') ?: 'lempuser';
-$password = getenv('POSTGRES_PASSWORD') ?: 'LempSecurePass2024!';
+$dbname = getenv('POSTGRES_DB') ?: 'leppdb';
+$username = getenv('POSTGRES_USER') ?: 'leppuser';
+$password = getenv('POSTGRES_PASSWORD') ?: 'LeppSecurePass2024!';
 
 try {
     $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password, [
@@ -45,7 +76,7 @@ $php_version = phpversion();
 $memory_limit = ini_get('memory_limit');
 
 // --- Nginx статус ---
-$nginx_status = 'running'; // если PHP отвечает, значит Nginx работает
+$nginx_status = 'running';
 
 // --- OPcache ---
 $opcache_status = 'disabled';
@@ -64,6 +95,7 @@ if ($db_status === 'error' || $redis_status === 'error') {
     $health_status = 'degraded';
     $health_class = 'status-warn';
 }
+
 if ($db_status === 'disconnected' && $redis_status === 'disconnected') {
     $health_status = 'critical';
     $health_class = 'status-err';
@@ -72,7 +104,6 @@ if ($db_status === 'disconnected' && $redis_status === 'disconnected') {
 // --- Время загрузки ---
 $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,6 +113,7 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
     <title>LEPP Stack Monitor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         html, body {
             background: #000;
             color: #0f0;
@@ -91,6 +123,7 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
             font-size: 14px;
             min-height: 100vh;
         }
+        
         .container { max-width: 1200px; margin: 0 auto; }
         
         h1 {
@@ -136,29 +169,29 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
             text-shadow: 0 0 10px #0f0;
         }
         
-        .metric { 
-            margin: 0.5rem 0; 
+        .metric {
+            margin: 0.5rem 0;
             display: flex;
             align-items: center;
         }
         
-        .label { 
+        .label {
             flex: 0 0 140px;
-            color: #0c0; 
+            color: #0c0;
             font-weight: bold;
         }
         
-        .value { 
-            color: #0f0; 
+        .value {
+            color: #0f0;
             font-weight: bold;
             text-shadow: 0 0 5px #0f0;
         }
         
-        .status { 
-            display: inline-block; 
-            width: 14px; 
-            height: 14px; 
-            border-radius: 50%; 
+        .status {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
             margin-right: 8px;
             animation: pulse 2s infinite;
         }
@@ -168,24 +201,24 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
             50% { opacity: 0.5; }
         }
         
-        .status-ok { 
-            background: #0f0; 
+        .status-ok {
+            background: #0f0;
             box-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
         }
         
-        .status-warn { 
-            background: #ff0; 
+        .status-warn {
+            background: #ff0;
             box-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
         }
         
-        .status-err { 
-            background: #f00; 
+        .status-err {
+            background: #f00;
             box-shadow: 0 0 10px #f00, 0 0 20px #f00;
         }
         
-        .error-msg { 
-            color: #f66; 
-            font-size: 0.85rem; 
+        .error-msg {
+            color: #f66;
+            font-size: 0.85rem;
             margin-top: 0.5rem;
             word-break: break-word;
         }
@@ -207,7 +240,6 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
             color: #080;
         }
         
-        /* Эффект сканирующей линии */
         @keyframes scan {
             0% { top: 0; }
             100% { top: 100%; }
@@ -227,7 +259,6 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
 </head>
 <body>
     <div class="scan-line"></div>
-    
     <div class="container">
         <h1>
             <span>LEPP STACK MONITOR</span>
@@ -274,6 +305,9 @@ $page_load_time = round((microtime(true) - $start_time) * 1000, 2);
                     <span class="label">STATUS:</span>
                     <span class="value"><?= strtoupper($redis_status) ?></span>
                 </div>
+                <?php if ($redis_error): ?>
+                    <div class="error-msg">ERROR: <?= htmlspecialchars(substr($redis_error, 0, 80)) ?></div>
+                <?php endif; ?>
             </div>
 
             <!-- PHP Runtime -->

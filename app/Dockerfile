@@ -39,7 +39,7 @@ RUN { \
     echo 'opcache.enable=1'; \
     echo 'opcache.memory_consumption=256'; \
     echo 'opcache.max_accelerated_files=10000'; \
-    echo 'opcache.validate_timestamps=0'; \
+    echo 'opcache.validate_timestamps=1'; \
     echo 'session.save_handler=redis'; \
     echo 'session.save_path="tcp://redis:6379"'; \
     echo 'expose_php=Off'; \
