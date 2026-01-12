@@ -32,13 +32,13 @@ Requirements
 
 ```text
 lepp-docker/
-├── www/               # Веб-файлы (index.php)
-├── app/               # Конфигурация PHP-FPM
-├── reverse-proxy/     # Конфиг Nginx
-├── db/                # Инициализация PostgreSQL
-├── prometheus/        # Конфиг Prometheus
-├── grafana/           # Дашборды и источники данных
-└── .env               # Переменные окружения
+├── www/               # Web-files (index.php)
+├── app/               # Config PHP-FPM
+├── reverse-proxy/     # Config Nginx
+├── db/                # Init PostgreSQL
+├── prometheus/        # Config Prometheus
+├── grafana/           # Dashboards and datasources
+└── .env               # env variables
 ```
 
  1. Internet → Nginx (reverse proxy)
@@ -120,34 +120,19 @@ docker version && docker compose version
 
 Project Deployment
 
- 1. Clone the repository
-git clone https://github.com/your-username/lemp-docker.git
-cd lemp-docker
+# Clone the repository
+git clone https://github.com/notrootbutclose/lepp-docker.git
+cd lepp-docker
 
- 2. Configure environment variables
+# Configure environment variables
 cp .env.example .env
 nano .env  # SET STRONG PASSWORDS!
 
-3. Start all services
+# Start all services
 docker compose up -d --build
 
-4. Check service status
+# Check service status
 docker compose ps
-
-
-Verification
-
-Main web interface
-curl http://localhost
-
-Nginx status
-curl http://localhost/nginx_status
-
-Prometheus metrics
-curl http://localhost:9090/api/v1/targets
-
-Connect to the database
-docker exec -it lemp-db mysql -u root -p${MYSQL_ROOT_PASSWORD}
 
 
 Project Structure
@@ -209,7 +194,7 @@ Restart a service
 docker compose restart app-php-1 
 
 Enter a container  
-docker exec -it lemp-app-php-1 sh
+docker exec -it lepp-app-php-1 sh
 
 Monitor resource usage  
 docker stats
@@ -225,22 +210,6 @@ docker compose up -d --scale app-php-1=2 --scale app-php-2=2
 
 Or scale to 6 instances  
 docker compose up -d --scale app-php-1=3 --scale app-php-2=3 
-
-
-Grafana Setup
-
-   1. Open http://localhost:3000
-   2. Log in using credentials from your .env file
-   3. Data sources (Prometheus and Loki) are pre-configured
-   4. Import ready-made dashboards:
-    Configuration → Dashboards → Import
-
-Recommended Dashboard IDs:
-
-    MySQL: 7362  
-    Nginx: 12708  
-    Docker Host: 1860  
-    Node Exporter: 1860
 
 
 Created to demonstrate DevOps and containerization skills.
