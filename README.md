@@ -3,7 +3,7 @@ LEMP Stack in Docker with Full Observability
 [![Docker](https://img.shields.io/badge/Docker-20.10%2B-2496ED?logo=docker&logoColor=white&style=flat-square)](https://docs.docker.com/)
 [![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white&style=flat-square)](https://www.php.net/)
 [![Nginx](https://img.shields.io/badge/Nginx-Alpine-009639?logo=nginx&logoColor=white&style=flat-square)](https://nginx.org/)
-[![MariaDB](https://img.shields.io/badge/MariaDB-11-003545?logo=mariadb&logoColor=white&style=flat-square)](https://mariadb.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-Latest-E6522C?logo=prometheus&logoColor=white&style=flat-square)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Latest-F46800?logo=grafana&logoColor=white&style=flat-square)](https://grafana.com/)
 
